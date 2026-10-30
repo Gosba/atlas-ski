@@ -1,0 +1,18 @@
+{
+  "name": "Atlas des stations alpines · Hiver 2026-2027",
+  "short_name": "Atlas Ski",
+  "description": "Carte interactive des stations de ski des Alpes françaises : prix, pistes, altitudes, webcams. Édition Benarb'IA.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#17324d",
+  "theme_color": "#17324d",
+  "categories": ["travel", "sports", "navigation"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

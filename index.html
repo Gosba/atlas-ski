@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Carte interactive des stations de ski des Alpes françaises, hiver 2026-2027 : prix des forfaits, kilomètres de pistes, altitudes, dates d'ouverture, webcams. Édition Benarb'IA.">
+<meta name="theme-color" content="#17324d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Atlas Ski">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta property="og:title" content="Atlas des stations alpines · Hiver 2026-2027">
+<meta property="og:description" content="Où skier cet hiver ? La carte interactive des stations des Alpes : prix, km de pistes, webcams, profils.">
+<meta property="og:image" content="partage.png">
+<meta property="og:type" content="website">
+<title>Atlas des stations alpines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a cartographer's sheet — header band, then map + station sheet side by side, then the comparison plates */
+:root {
+  --paper: #f5f8fb;      /* snow paper, slight glacier bias */
+  --sheet: #ffffff;
+  --ink: #15283c;        /* the guide's navy, as text */
+  --ink-2: #4b5d70;
+  --ink-3: #74859a;
+  --rule: #d5dfe9;
+  --navy: #17324d;
+  --navy-ink: #ffffff;
+  --ice: #e6eef6;
+  --land: #e9eff5;
+  --land-alps: #dbe6f1;
+  --land-alps-hi: #c9daeb;
+  --abroad: #eef0ec;
+  --border: #9fb3c8;
+  --g1: #2a78d6;  /* Savoie Mont-Blanc */
+  --g2: #eb6834;  /* Alpes du Sud */
+  --g3: #1baf7a;  /* Isère */
+  --pv: #2e9b4f; --pb: #2a6fd0; --pr: #d6403b; --pn: #26272b;
+  --gap: #ffffff;
+  --display: "Lora", Georgia, "Times New Roman", serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #0f1b27; --sheet: #15232f; --ink: #e8eef5; --ink-2: #b4c2d0; --ink-3: #8899ab; --rule: #2a3b4c;
+  --navy: #0a1622; --navy-ink: #e8eef5; --ice: #1d2f40; --land: #1a2836; --land-alps: #22364a; --land-alps-hi: #2b4560;
+  --abroad: #18222b; --border: #4a6177; --g1: #3987e5; --g2: #d95926; --g3: #199e70;
+  --pv: #3aae5d; --pb: #4a8ae6; --pr: #e25a55; --pn: #c9ced6; --gap: #15232f; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --paper: #0f1b27; --sheet: #15232f; --ink: #e8eef5; --ink-2: #b4c2d0; --ink-3: #8899ab; --rule: #2a3b4c;
+  --navy: #0a1622; --navy-ink: #e8eef5; --ice: #1d2f40; --land: #1a2836; --land-alps: #22364a; --land-alps-hi: #2b4560;
+  --abroad: #18222b; --border: #4a6177; --g1: #3987e5; --g2: #d95926; --g3: #199e70;
+  --pv: #3aae5d; --pb: #4a8ae6; --pr: #e25a55; --pn: #c9ced6; --gap: #15232f; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+a { color: inherit; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--g1); outline-offset: 2px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* header */
+.top { background: var(--navy); color: var(--navy-ink); position: relative; overflow: hidden; }
+.top .wrap { padding-block: 28px 0; display: grid; gap: 18px; position: relative; z-index: 1; }
+.kicker { font-size: 12px; letter-spacing: .22em; text-transform: uppercase; opacity: .75; }
+.top h1 { font-size: clamp(30px, 5vw, 50px); line-height: 1.05; }
+.top h1 span { display: block; font-family: var(--body); font-weight: 400; font-size: .42em; letter-spacing: .02em; opacity: .85; margin-top: 8px; }
+.facts { display: flex; flex-wrap: wrap; gap: 10px 28px; padding-bottom: 22px; }
+.fact b { display: block; font-family: var(--display); font-size: 26px; line-height: 1.1; }
+.fact { font-size: 13px; opacity: .9; }
+.ridge { display: block; width: 100%; height: 46px; margin-top: -8px; }
+.ridge path { fill: var(--paper); }
+.cta-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-bottom: 6px; }
+.cta { display: inline-flex; align-items: center; gap: 8px; background: var(--navy-ink); color: var(--navy); border-radius: 999px; padding: 10px 18px; font-weight: 600; text-decoration: none; }
+.top .cta { background: #ffffff; color: #17324d; }
+.cta-ghost { border: 1px solid currentColor; border-radius: 999px; padding: 9px 16px; text-decoration: none; opacity: .9; }
+
+/* filters */
+.filters { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; padding-block: 18px 14px; }
+.fgroup { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.flabel { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-right: 4px; }
+.chip { border: 1px solid var(--rule); background: var(--sheet); border-radius: 999px; padding: 5px 12px; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.range { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.range input { width: 150px; accent-color: var(--g1); }
+.searchrow { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; padding-top: 18px; }
+.search { position: relative; flex: 1 1 260px; max-width: 420px; }
+.search input { width: 100%; font: inherit; font-size: 15px; padding: 9px 12px 9px 36px; border: 1px solid var(--rule); border-radius: 999px; background: var(--sheet); color: var(--ink); }
+.search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--ink-3); fill: none; stroke-width: 2; }
+.from { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.from select { font: inherit; font-size: 14px; padding: 7px 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); color: var(--ink); }
+.facts2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.facts2 div { background: var(--sheet); padding: 9px 10px; }
+.facts2 small { display: block; font-size: 11px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; }
+.facts2 span { font-size: 14.5px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.act { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--rule); background: var(--sheet); border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 500; text-decoration: none; color: var(--ink); }
+.act:hover { border-color: var(--ink-3); }
+.act svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.8; flex: none; }
+.act .live { width: 8px; height: 8px; border-radius: 50%; background: var(--pr); }
+.srcnote { font-size: 11.5px; color: var(--ink-3); margin: -6px 0 0; }
+.empty { padding: 18px 12px; color: var(--ink-3); font-size: 14px; }
+
+/* main grid */
+.main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 880px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.mapbox { position: relative; background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.mapbox svg { display: block; width: 100%; height: min(78vh, 760px); touch-action: none; cursor: grab; }
+.mapbox svg.drag { cursor: grabbing; }
+.mapctl { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; }
+.mapctl button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--rule); background: var(--sheet); cursor: pointer; font-size: 17px; line-height: 1; }
+.zooms { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 4px; max-width: calc(100% - 64px); }
+.zooms button { border: 1px solid var(--rule); background: var(--sheet); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; cursor: pointer; }
+.legend { position: absolute; left: 10px; bottom: 10px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 7px 10px; font-size: 12px; display: grid; gap: 3px; }
+.legend div { display: flex; align-items: center; gap: 6px; }
+.dep { fill: var(--land-alps); stroke: var(--border); stroke-width: .8; }
+.dep.on { fill: var(--land-alps-hi); }
+.other { fill: var(--land); stroke: var(--border); stroke-width: .5; stroke-dasharray: 2 2; }
+.country { fill: var(--abroad); stroke: var(--border); stroke-width: .6; }
+.deplab { fill: var(--ink-3); font-family: var(--body); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; pointer-events: none; }
+.ctylab { fill: var(--ink-3); font-family: var(--display); font-style: italic; font-size: 15px; pointer-events: none; }
+.mk { stroke: var(--gap); stroke-width: 2; cursor: pointer; }
+.mk.sel { stroke: var(--ink); stroke-width: 2.5; }
+.mk.dim { opacity: .18; }
+.mlab { fill: var(--ink); font-size: 11.5px; font-weight: 600; paint-order: stroke; stroke: var(--sheet); stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 12.5px; padding: 6px 9px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, calc(-100% - 12px)); z-index: 3; }
+.tip b { font-weight: 600; }
+
+/* station sheet */
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.card .meta { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.card h2 { font-size: 27px; line-height: 1.15; }
+.card .note { color: var(--ink-2); margin: 0; }
+.kv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.kv div { background: var(--sheet); padding: 9px 10px; }
+.kv small { display: block; font-size: 11px; color: var(--ink-3); letter-spacing: .06em; text-transform: uppercase; }
+.kv span { font-family: var(--mono); font-size: 17px; font-variant-numeric: tabular-nums; }
+.kv .na { font-family: var(--body); font-size: 13px; color: var(--ink-3); }
+.mix { display: flex; height: 14px; gap: 2px; }
+.mix i { display: block; height: 100%; }
+.mix i:first-child { border-radius: 4px 0 0 4px; } .mix i:last-child { border-radius: 0 4px 4px 0; }
+.mixlab { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-2); margin-top: 6px; }
+.mixlab span { display: inline-flex; align-items: center; gap: 5px; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-size: 12.5px; border-radius: 6px; padding: 3px 8px; background: var(--ice); }
+.badge b { font-family: var(--mono); font-weight: 500; }
+.teaser { border-top: 1px dashed var(--rule); padding-top: 12px; font-size: 13.5px; color: var(--ink-2); }
+.teaser ul { margin: 6px 0 10px; padding-left: 18px; columns: 2; column-gap: 18px; }
+@media (max-width: 480px) { .teaser ul { columns: 1; } .kv { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.teaser .cta { background: var(--ink); color: var(--paper); font-size: 14px; padding: 8px 15px; }
+
+/* list */
+.listbox { margin-top: 0; max-height: 330px; overflow: auto; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { position: sticky; top: 0; background: var(--sheet); text-align: left; font-weight: 600; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); padding: 8px 10px; border-bottom: 1px solid var(--rule); cursor: pointer; white-space: nowrap; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--rule); }
+td.r, th.r { text-align: right; }
+tbody tr { cursor: pointer; }
+tbody tr:hover td, tbody tr.sel td { background: var(--ice); }
+.side { display: grid; gap: 14px; min-width: 0; }
+.count { font-size: 13px; color: var(--ink-3); }
+
+/* plates */
+section.plate { padding-block: 44px 8px; }
+.plate-head { display: grid; gap: 6px; margin-bottom: 16px; max-width: 70ch; }
+.plate-head h2 { font-size: clamp(23px, 3vw, 31px); }
+.plate-head p { margin: 0; color: var(--ink-2); }
+.eyebrow { font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); }
+.chartbox { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; position: relative; overflow-x: auto; }
+.chartbox svg { display: block; }
+.axis text, .tick { fill: var(--ink-3); font-size: 11.5px; font-family: var(--body); }
+.grid line { stroke: var(--rule); stroke-width: 1; }
+.lbl { fill: var(--ink); font-size: 12px; font-family: var(--body); }
+.lbl2 { fill: var(--ink-2); font-size: 11.5px; font-family: var(--mono); }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+@media (max-width: 880px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.hit { fill: transparent; cursor: pointer; }
+.bar { fill: var(--ink-3); }
+.bar.sel { fill: var(--g1); }
+
+/* palmares */
+.palm { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 980px) { .palm { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .palm { grid-template-columns: minmax(0, 1fr); } }
+.pcol { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 14px 8px; min-width: 0; }
+.pcol h3 { font-size: 19px; margin-bottom: 8px; }
+.pcol ol { list-style: none; margin: 0; padding: 0; }
+.pcol li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 6px; padding: 6px 0; border-top: 1px solid var(--rule); font-size: 14px; cursor: pointer; }
+.pcol li:hover { color: var(--g1); }
+.pcol li .num { color: var(--ink-3); font-size: 13px; }
+
+/* guide */
+.guide { background: var(--navy); color: var(--navy-ink); border-radius: 14px; padding: 28px clamp(18px, 4vw, 40px); display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; margin-block: 40px 30px; }
+@media (max-width: 820px) { .guide { grid-template-columns: minmax(0, 1fr); } }
+.guide h2 { font-size: clamp(25px, 3.4vw, 36px); margin: 6px 0 10px; }
+.guide p { margin: 0 0 12px; opacity: .92; max-width: 60ch; }
+.tomes { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.tomes li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-top: 1px solid rgba(255,255,255,.18); font-size: 14px; }
+.tomes li b { font-family: var(--display); font-size: 15px; }
+.inside { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 18px; }
+.inside span { border: 1px solid rgba(255,255,255,.35); border-radius: 999px; padding: 3px 10px; font-size: 13px; }
+.guide .cta { background: #ffffff; color: #17324d; }
+footer { padding-block: 10px 40px; font-size: 12.5px; color: var(--ink-3); }
+footer p { margin: 0 0 6px; max-width: 90ch; }
+@media (prefers-reduced-motion: no-preference) { .mk { transition: opacity .2s; } }
+@media (max-width: 600px) {
+  .top .wrap { gap: 12px; padding-block: 20px 0; }
+  .facts { gap: 6px 18px; padding-bottom: 10px; }
+  .fact { font-size: 12px; } .fact b { font-size: 20px; }
+  .cta-ghost { display: none; }
+  .cta { padding: 9px 16px; font-size: 14.5px; }
+  .ridge { height: 26px; }
+  .searchrow { padding-top: 12px; }
+  .filters { gap: 8px 14px; padding-block: 12px 10px; }
+  .mapbox svg { height: 64vh; }
+  .zooms button { font-size: 12px; padding: 3px 8px; }
+}
+</style>
+
+<style>
+:root { padding: 0 !important; }
+body { margin: 0; padding-bottom: env(safe-area-inset-bottom, 0px); -webkit-text-size-adjust: 100%; }
+[hidden] { display: none !important; }
+.top .wrap { padding-top: calc(28px + env(safe-area-inset-top, 0px)); }
+.install { position: fixed; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 20;
+  max-width: 560px; margin: 0 auto; display: flex; align-items: center; gap: 12px; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 14px; padding: 10px 12px; box-shadow: 0 8px 30px rgba(10, 25, 40, .25); }
+.install img { border-radius: 9px; flex: none; }
+.install-t { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.35; display: grid; }
+.install-t b { font-size: 14.5px; }
+#installBtn { background: var(--navy); color: #fff; border: 0; border-radius: 999px; padding: 8px 14px; font-weight: 600; cursor: pointer; }
+#installClose { background: none; border: 0; font-size: 22px; line-height: 1; color: var(--ink-3); cursor: pointer; padding: 4px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="kicker">Édition Benarb'IA · Hiver 2026-2027</div>
+    <h1>Atlas des stations alpines<span>Carte interactive du Guide des stations de ski des Alpes</span></h1>
+    <div class="facts" id="facts"></div>
+    <div class="cta-row">
+      <a class="cta" href="#guide">Découvrir le guide complet</a>
+      <a class="cta-ghost" href="#plates">Voir les comparatifs</a>
+    </div>
+  </div>
+  <svg class="ridge" viewBox="0 0 1200 46" preserveAspectRatio="none" aria-hidden="true"><path d="M0 46 L0 30 L90 12 L150 26 L260 4 L330 22 L410 14 L520 32 L600 10 L690 24 L780 6 L860 28 L960 16 L1040 30 L1120 12 L1200 26 L1200 46 Z"/></svg>
+</header>
+
+<main class="wrap">
+  <div class="searchrow">
+    <label class="search" for="q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <input id="q" type="search" placeholder="Rechercher une station ou un massif" autocomplete="off" aria-label="Rechercher une station ou un massif"></label>
+    <label class="from" for="from"><span class="flabel">Je pars de</span>
+      <select id="from"></select></label>
+  </div>
+  <div class="filters" role="group" aria-label="Filtres">
+    <div class="fgroup" id="fProfil"><span class="flabel">Profil</span></div>
+    <div class="fgroup" id="fZone"><span class="flabel">Zone</span></div>
+    <label class="range" for="fPrix"><span class="flabel">Journée adulte</span> jusqu'à <b class="num" id="fPrixV"></b>
+      <input type="range" id="fPrix" min="15" max="90" step="5" value="90"></label>
+  </div>
+
+  <div class="main">
+    <div class="mapbox" id="mapbox">
+      <svg id="map" role="img" aria-label="Carte des stations de ski des Alpes françaises"></svg>
+      <div class="zooms" id="zooms"></div>
+      <div class="mapctl">
+        <button type="button" id="zin" aria-label="Zoomer">+</button>
+        <button type="button" id="zout" aria-label="Dézoomer">−</button>
+        <button type="button" id="zreset" aria-label="Vue d'ensemble">⤢</button>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+    <div class="side">
+      <article class="card" id="card" aria-live="polite"></article>
+      <div>
+        <div class="count" id="count"></div>
+        <div class="listbox"><table id="list"><thead><tr>
+          <th data-k="name">Station</th><th class="r" data-k="km">Km</th><th class="r" data-k="j1">1 jour</th><th class="r" data-k="dist" title="Distance à vol d'oiseau depuis la ville de départ">Distance</th>
+        </tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <section class="plate" id="plates">
+    <div class="plate-head">
+      <span class="eyebrow">Planche 1</span>
+      <h2>Taille du domaine et prix de la journée</h2>
+      <p>Chaque point est un domaine. Plus il est à droite, plus il y a de kilomètres de pistes ; plus il est haut, plus la journée adulte coûte cher. Cliquez sur un point pour ouvrir sa fiche.</p>
+    </div>
+    <div class="chartbox" id="scatter"></div>
+  </section>
+
+  <section class="plate">
+    <div class="two">
+      <div>
+        <div class="plate-head">
+          <span class="eyebrow">Planche 2</span>
+          <h2>Le prix de 10 km de glisse</h2>
+          <p>Prix de la journée adulte divisé par la taille du domaine, pour les domaines de 100 km et plus. Plus la barre est courte, plus chaque kilomètre est bon marché.</p>
+        </div>
+        <div class="chartbox" id="perkm"></div>
+      </div>
+      <div>
+        <div class="plate-head">
+          <span class="eyebrow">Planche 3</span>
+          <h2>Vertes, bleues, rouges, noires</h2>
+          <p>La part de chaque couleur de piste, pour les domaines dont le détail est publié. Un domaine riche en bleues convient aux familles ; beaucoup de rouges et de noires attirent les bons skieurs.</p>
+        </div>
+        <div class="chartbox" id="mixchart"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="plate">
+    <div class="plate-head">
+      <span class="eyebrow">Planche 4</span>
+      <h2>Le palmarès du guide</h2>
+      <p>Nos huit choix pour chaque profil de skieur. C'est une appréciation éditoriale, construite à partir des fiches du guide.</p>
+    </div>
+    <div class="palm" id="palm"></div>
+  </section>
+
+  <section class="guide" id="guide">
+    <div>
+      <span class="kicker">Le guide complet</span>
+      <h2>Guide des stations de ski des Alpes · Hiver 2026-2027</h2>
+      <p>Cette carte ne montre qu'une partie des données. Le guide détaille chaque station sur une fiche identique, pour comparer d'un coup d'œil et préparer son séjour sans ouvrir vingt onglets.</p>
+      <div class="inside">
+        <span>Tarifs par âge et par forfait</span><span>Pistes par couleur</span><span>Remontées</span><span>Webcams</span>
+        <span>Hébergements avec téléphone</span><span>Restaurants et commerces</span><span>Piscines, spas, activités enfants</span><span>Cartes des massifs</span><span>Avis par profil</span>
+      </div>
+      <a class="cta" id="buy" href="#guide">Obtenir le guide (PDF, 72 pages)</a>
+    </div>
+    <ol class="tomes">
+      <li><b>Tome 1</b><span>Savoie (73) · Tarentaise, Maurienne, Beaufortain, Bauges</span></li>
+      <li><b>Tome 2</b><span>Haute-Savoie (74) · Chablais, Giffre, Aravis, Mont-Blanc</span></li>
+      <li><b>Tome 3</b><span>Isère (38) · Oisans, Belledonne, Vercors, Chartreuse</span></li>
+      <li><b>Tome 4</b><span>Hautes-Alpes (05) · Briançonnais, Embrunais, Champsaur-Dévoluy, Queyras</span></li>
+      <li><b>Tome 5</b><span>Alpes du Sud-Est (04, 06, 26) · Ubaye, Haut-Verdon, Mercantour</span></li>
+      <li><b>Final</b><span>Comparatif des 29 grands domaines et palmarès par profil</span></li>
+    </ol>
+  </section>
+
+  <footer>
+    <p>Tarifs adultes publics de la saison 2026-2027 relevés au 26 octobre 2026 sur les sites des domaines et les comparateurs cités dans le guide. Certains tarifs n'étaient pas encore publiés : ils apparaissent « non publié ». Vérifiez toujours le prix au moment de l'achat.</p>
+    <p>Altitudes, dates d'ouverture prévues et webcams : skiinfo.fr, consulté le 30 octobre 2026. Distances à vol d'oiseau ; l'itinéraire routier s'ouvre dans Google Maps.</p>
+    <p>Positions des stations approximatives. Fonds de carte : contours des départements (france-geojson) et des pays (Natural Earth, domaine public).</p>
+    <p>© Édition Benarb'IA</p>
+  </footer>
+</main>
+
+<script>
+const GUIDE_URL = "https://graniereditions.gumroad.com/l/guidestationdeskialpine";
+const MAP = {"w": 658, "h": 900, "deps": [{"code": "04", "name": "Alpes-de-Haute-Provence", "d": "M200 709L204 705L213 702L218 703L222 701L229 705L246 708L247 704L240 702L235 691L228 686L228 681L233 675L239 678L240 684L247 690L247 685L249 672L243 669L252 657L255 646L269 639L271 635L281 629L282 622L290 622L298 626L298 632L302 633L314 650L316 650L321 641L315 627L321 625L327 621L334 626L337 623L339 616L336 612L341 608L350 617L352 624L357 623L363 626L365 630L399 631L402 619L407 615L410 603L414 603L422 599L428 589L435 584L446 581L447 577L452 576L459 567L466 569L469 577L466 580L463 587L463 593L459 597L451 600L446 606L449 616L452 622L457 625L458 629L464 633L464 636L455 639L455 653L453 657L447 662L443 661L437 665L434 670L432 678L427 681L426 686L419 690L418 702L411 714L415 722L415 728L421 734L425 741L423 752L434 763L443 768L445 778L451 779L453 784L459 787L465 796L453 798L451 795L441 789L436 792L431 800L424 803L413 803L413 808L409 810L407 816L414 818L415 822L401 826L400 828L397 823L389 825L384 830L376 823L367 828L358 826L353 828L353 837L347 845L334 841L321 830L319 825L310 825L305 832L304 836L295 844L287 844L282 853L273 857L273 861L270 865L266 859L263 856L262 851L256 849L252 846L252 840L245 840L244 845L233 849L229 841L219 838L214 846L212 843L205 838L204 831L198 828L196 823L192 817L186 816L175 816L169 820L170 810L175 806L182 790L176 787L172 782L169 783L162 781L161 777L163 768L168 757L169 744L160 746L159 730L168 725L170 720L177 718L173 714L175 709L182 709L189 715L187 720L197 721L198 716L190 715L191 708L200 709Z", "c": [303, 716]}, {"code": "05", "name": "Hautes-Alpes", "d": "M329 432L335 430L342 434L344 440L343 444L349 446L358 446L361 449L368 448L367 438L374 432L378 435L383 434L387 428L396 429L399 432L398 435L406 444L405 449L408 459L419 459L423 460L425 466L422 468L427 474L425 482L424 493L429 494L436 502L448 510L459 511L463 506L479 513L481 521L477 528L483 536L482 543L487 550L491 551L494 561L490 561L482 558L474 559L468 564L466 569L459 567L452 576L447 577L446 581L435 584L428 589L422 599L414 603L410 603L407 615L402 619L399 631L365 630L363 626L357 623L352 624L350 617L341 608L336 612L339 616L337 623L334 626L327 621L321 625L315 627L321 641L316 650L314 650L302 633L298 632L298 626L290 622L282 622L281 629L271 635L269 639L255 646L252 657L243 669L249 672L247 685L247 690L240 684L239 678L233 675L228 681L228 686L235 691L240 702L247 704L246 708L229 705L222 701L218 703L213 702L204 705L200 709L196 708L198 695L196 693L196 682L190 683L187 680L188 675L182 672L184 665L167 665L164 660L158 664L153 660L151 655L145 654L147 648L142 638L148 635L154 639L159 634L152 631L150 625L155 618L163 618L181 625L184 623L187 615L194 614L186 605L180 602L184 590L190 582L189 570L207 573L213 566L221 569L223 563L228 559L228 555L223 553L229 543L233 540L242 540L244 538L249 539L261 531L260 528L254 524L261 519L266 519L272 514L277 520L289 512L292 506L301 509L307 507L318 509L322 504L329 503L337 510L340 508L340 501L341 497L340 488L341 483L335 481L335 474L332 471L333 465L329 464L319 466L308 461L312 445L317 444L314 432L320 427L329 432Z", "c": [340, 568]}, {"code": "06", "name": "Alpes-Maritimes", "d": "M461 660L462 665L469 672L468 676L476 681L477 689L479 694L486 698L492 695L507 705L511 703L520 710L524 714L528 713L530 717L537 723L550 721L553 730L560 728L568 730L568 727L575 727L585 722L600 719L608 720L614 712L623 713L620 719L619 725L620 730L629 740L629 745L626 753L618 756L619 765L616 773L607 778L604 778L599 784L596 791L596 796L586 800L582 806L587 824L590 829L581 835L578 840L575 837L565 845L565 848L557 850L554 848L549 851L547 856L540 859L538 857L529 858L521 871L519 868L511 869L507 874L503 889L503 897L499 894L492 897L490 900L454 900L458 893L458 885L454 883L443 881L438 876L435 877L431 869L427 865L429 857L428 849L425 844L418 844L414 839L410 838L405 840L400 828L401 826L415 822L414 818L407 816L409 810L413 808L413 803L424 803L431 800L436 792L441 789L451 795L453 798L465 796L459 787L453 784L451 779L445 778L443 768L434 763L423 752L425 741L421 734L415 728L415 722L411 714L418 702L419 690L426 686L427 681L432 678L434 670L437 665L443 661L447 662L453 657L461 660Z", "c": [525, 778]}, {"code": "26", "name": "Dr\u00f4me", "d": "M23 372L28 376L38 368L45 366L51 362L55 362L57 369L65 369L69 380L82 376L79 390L90 390L92 396L88 405L93 414L93 429L88 435L85 442L89 444L92 440L101 441L106 447L117 446L120 450L126 450L135 454L148 444L150 440L155 440L152 449L155 461L158 466L154 475L156 488L151 517L156 518L151 527L167 533L177 532L177 535L186 539L190 548L203 549L210 551L214 556L223 553L228 555L228 559L223 563L221 569L213 566L207 573L189 570L190 582L184 590L180 602L186 605L194 614L187 615L184 623L181 625L163 618L155 618L150 625L152 631L159 634L154 639L148 635L142 638L147 648L145 654L151 655L153 660L158 664L164 660L167 665L184 665L182 672L188 675L187 680L190 683L196 682L196 693L198 695L196 708L191 708L190 715L198 716L197 721L187 720L189 715L182 709L175 709L173 714L177 718L170 720L168 725L159 730L149 729L145 720L134 718L135 705L128 701L124 704L107 696L104 701L90 699L86 696L87 691L85 680L89 677L90 672L75 681L69 680L66 673L54 679L49 680L39 686L27 687L16 697L14 695L13 688L11 681L12 674L3 667L0 667L0 581L5 572L7 560L3 549L2 533L10 527L15 513L19 512L23 503L23 494L29 485L27 478L23 475L21 467L19 464L19 454L23 448L17 444L16 434L12 428L12 425L17 418L14 416L12 407L13 404L11 397L13 378L11 375L23 372ZM26 660L31 664L28 668L30 674L37 672L48 676L58 661L59 656L64 656L63 651L56 647L56 643L51 638L45 638L36 643L33 653L26 660Z", "c": [95, 544]}, {"code": "38", "name": "Is\u00e8re", "d": "M185 284L196 299L196 304L199 307L204 313L206 320L209 323L208 329L210 334L219 333L227 339L240 343L242 347L246 348L244 340L248 331L249 325L247 322L258 317L263 322L267 323L267 329L276 334L284 332L286 335L293 335L296 341L303 347L306 359L304 370L299 371L293 379L295 386L292 392L299 404L300 408L296 419L299 420L305 416L313 422L318 420L321 423L320 427L314 432L317 444L312 445L308 461L319 466L329 464L333 465L332 471L335 474L335 481L341 483L340 488L341 497L340 501L340 508L337 510L329 503L322 504L318 509L307 507L301 509L292 506L289 512L277 520L272 514L266 519L261 519L254 524L260 528L261 531L249 539L244 538L242 540L233 540L229 543L223 553L214 556L210 551L203 549L190 548L186 539L177 535L177 532L167 533L151 527L156 518L151 517L156 488L154 475L158 466L155 461L152 449L155 440L150 440L148 444L135 454L126 450L120 450L117 446L106 447L101 441L92 440L89 444L85 442L88 435L93 429L93 414L88 405L92 396L90 390L79 390L82 376L69 380L65 369L57 369L55 362L51 362L45 366L38 368L28 376L23 372L11 375L4 370L2 363L5 359L1 355L0 337L2 336L1 328L5 329L7 323L19 315L25 308L24 304L19 302L12 293L17 289L22 291L24 287L32 283L47 281L53 284L54 278L61 280L60 274L65 269L66 265L76 259L81 253L87 252L80 244L73 243L73 235L68 235L66 227L72 230L74 221L87 224L91 227L94 233L100 234L110 228L114 222L117 211L127 200L141 209L145 216L143 223L163 245L165 250L169 251L175 257L170 261L177 265L181 270L185 281L185 284Z", "c": [188, 377]}, {"code": "73", "name": "Savoie", "d": "M437 247L445 258L457 263L457 266L463 271L470 269L477 273L475 278L473 288L476 292L475 306L478 310L477 314L487 316L487 321L498 324L501 335L516 343L512 350L512 356L507 360L506 366L501 366L503 376L506 381L507 388L492 402L488 397L470 403L468 411L463 414L455 414L453 418L455 424L445 427L437 420L428 417L422 424L416 422L409 423L408 428L399 432L396 429L387 428L383 434L378 435L374 432L367 438L368 448L361 449L358 446L349 446L343 444L344 440L342 434L335 430L329 432L320 427L321 423L318 420L313 422L305 416L299 420L296 419L300 408L299 404L292 392L295 386L293 379L299 371L304 370L306 359L303 347L296 341L293 335L286 335L284 332L276 334L267 329L267 323L263 322L258 317L247 322L249 325L248 331L244 340L246 348L242 347L240 343L227 339L219 333L210 334L208 329L209 323L206 320L204 313L199 307L196 304L196 299L185 284L185 281L193 273L199 270L199 265L203 260L202 252L214 252L219 242L218 236L220 222L229 192L229 183L236 185L239 207L238 212L247 224L257 221L261 226L260 233L267 240L274 243L276 240L283 243L292 239L295 237L303 241L307 245L305 254L314 254L316 259L325 260L330 257L335 257L347 232L355 224L365 200L370 198L374 194L384 197L387 202L386 206L380 206L382 217L388 220L393 226L405 225L411 234L411 238L413 242L412 247L416 248L425 235L435 231L437 247Z", "c": [346, 317]}, {"code": "74", "name": "Haute-Savoie", "d": "M425 235L416 248L412 247L413 242L411 238L411 234L405 225L393 226L388 220L382 217L380 206L386 206L387 202L384 197L374 194L370 198L365 200L355 224L347 232L335 257L330 257L325 260L316 259L314 254L305 254L307 245L303 241L295 237L292 239L283 243L276 240L274 243L267 240L260 233L261 226L257 221L247 224L238 212L239 207L236 185L229 183L230 173L225 168L225 141L230 133L235 139L240 140L242 129L249 126L256 125L262 122L275 123L276 120L285 119L292 123L302 118L305 112L315 103L324 100L331 92L330 88L322 91L316 82L324 60L330 55L338 54L341 59L348 63L352 57L365 53L368 47L374 44L381 47L400 43L419 43L433 47L436 51L429 59L432 65L449 80L446 89L443 91L436 104L437 110L433 116L434 123L438 126L456 128L453 136L454 140L450 149L454 152L461 145L467 150L474 163L479 165L482 171L481 177L485 179L487 188L482 190L478 196L478 200L476 205L467 207L464 211L450 211L439 214L436 220L438 223L435 231L425 235Z", "c": [338, 151]}], "others": ["M9 100L12 94L13 87L16 83L17 76L22 67L22 58L29 44L30 33L35 25L35 18L39 11L54 12L59 17L65 20L76 17L82 12L90 11L96 13L99 24L107 29L119 31L121 36L116 41L125 44L133 51L132 59L138 63L143 63L146 70L152 68L154 71L150 83L153 85L163 86L168 84L173 77L180 76L184 66L191 63L198 72L205 72L205 80L207 87L215 85L233 86L239 84L243 79L246 80L248 72L253 72L262 56L271 49L279 40L286 42L301 55L291 71L290 77L287 79L292 90L287 94L284 91L272 94L266 99L261 100L257 106L264 109L256 125L249 126L242 129L240 140L235 139L230 133L225 141L225 168L230 173L229 183L229 192L220 222L218 236L219 242L214 252L202 252L203 260L199 265L199 270L193 273L185 281L181 270L177 265L170 261L175 257L169 251L165 250L163 245L143 223L145 216L141 209L127 200L117 211L114 222L110 228L100 234L94 233L91 227L87 224L74 221L56 223L45 222L36 223L35 211L32 207L34 203L28 201L28 196L21 191L12 196L12 189L8 188L5 183L0 183L1 173L0 148L2 144L0 137L10 123L11 118L6 112L9 100Z", "M0 356L5 359L2 363L4 370L13 378L11 397L13 404L12 407L14 416L17 418L12 425L12 428L16 434L17 444L23 448L19 454L19 464L21 467L23 475L27 478L29 485L23 494L23 503L19 512L15 513L10 527L2 533L3 549L7 560L5 572L0 581L0 356Z", "M0 788L22 792L32 799L37 799L46 804L52 811L59 817L64 828L90 843L93 844L102 841L121 844L125 849L146 861L166 867L182 867L196 857L205 857L209 850L213 848L219 853L223 861L223 867L211 868L202 872L198 881L200 890L192 892L195 896L201 896L206 900L58 900L56 898L56 900L0 900L0 788Z", "M0 742L8 745L8 749L19 761L20 769L14 768L14 775L6 784L0 787L0 742Z", "M298 1L289 12L286 21L281 26L283 33L279 40L271 49L262 56L253 72L248 72L246 80L243 79L239 84L233 86L215 85L207 87L205 80L205 72L198 72L191 63L184 66L180 76L173 77L168 84L163 86L153 85L150 83L154 71L152 68L146 70L143 63L138 63L132 59L133 51L125 44L116 41L121 36L119 31L122 26L132 27L141 23L140 15L135 10L129 8L130 0L297 0L298 1Z", "M0 325L2 336L0 337L0 325ZM0 342L1 355L0 356L0 342Z", "M0 113L6 112L11 118L10 123L0 137L0 113ZM2 144L0 148L0 138L2 144ZM1 173L0 175L0 164L1 173ZM5 183L8 188L12 189L12 196L21 191L28 196L28 201L34 203L32 207L35 211L36 223L45 222L56 223L74 221L72 230L66 227L68 235L73 235L73 243L80 244L87 252L81 253L76 259L66 265L65 269L60 274L61 280L54 278L53 284L47 281L32 283L24 287L22 291L17 289L12 293L19 302L24 304L25 308L19 315L7 323L5 329L1 328L0 325L0 183L5 183Z", "M129 8L135 10L140 15L141 23L132 27L122 26L119 31L107 29L99 24L96 13L90 11L82 12L76 17L65 20L59 17L54 12L39 11L35 18L35 25L30 33L29 44L22 58L22 67L17 76L16 83L13 87L12 94L9 100L6 112L0 113L0 0L130 0L129 8Z", "M213 848L219 838L229 841L233 849L244 845L245 840L252 840L252 846L256 849L262 851L263 856L266 859L270 865L273 861L273 857L282 853L287 844L295 844L304 836L305 832L310 825L319 825L321 830L334 841L347 845L353 837L353 828L358 826L367 828L376 823L384 830L389 825L397 823L400 828L405 840L410 838L414 839L418 844L425 844L428 849L429 857L427 865L431 869L435 877L438 876L443 881L454 883L458 885L458 893L454 900L206 900L201 896L195 896L192 892L200 890L198 881L202 872L211 868L223 867L223 861L219 853L213 848Z", "M33 653L36 643L45 638L51 638L56 643L56 647L63 651L64 656L59 656L58 661L48 676L37 672L30 674L28 668L31 664L26 660L33 653ZM3 667L12 674L11 681L13 688L14 695L16 697L27 687L39 686L49 680L54 679L66 673L69 680L75 681L90 672L89 677L85 680L87 691L86 696L90 699L104 701L107 696L124 704L128 701L135 705L134 718L145 720L149 729L159 730L160 746L169 744L168 757L163 768L161 777L162 781L169 783L172 782L176 787L182 790L175 806L170 810L169 820L175 816L186 816L192 817L196 823L198 828L204 831L205 838L212 843L214 846L205 857L196 857L182 867L166 867L146 861L125 849L121 844L102 841L93 844L90 843L64 828L59 817L52 811L46 804L37 799L32 799L22 792L0 788L0 787L6 784L14 775L14 768L20 769L19 761L8 749L8 745L0 742L0 667L3 667Z"], "countries": [{"name": "Italie", "d": "M491 198L496 201L510 202L516 201L538 191L554 193L561 190L573 181L584 178L589 172L592 170L614 175L620 180L625 186L627 187L633 186L643 190L654 191L656 189L658 183L658 815L644 818L634 826L625 828L599 828L590 830L584 827L579 805L595 782L611 767L616 753L624 745L624 740L613 722L616 712L610 711L601 717L558 728L548 727L543 721L531 717L508 703L487 693L474 692L469 682L461 674L449 653L451 641L453 638L460 634L448 623L443 614L442 605L445 601L456 592L463 580L466 577L463 571L465 565L469 560L474 557L489 560L481 543L477 527L479 518L474 511L463 507L445 507L430 499L423 493L420 486L420 470L419 461L413 457L406 456L403 454L401 450L400 443L393 434L399 427L407 423L414 423L421 418L429 419L444 426L451 423L452 421L449 418L450 415L459 414L469 402L484 397L489 401L495 392L500 387L497 368L509 350L511 342L498 334L493 324L474 312L472 307L471 295L467 287L471 277L470 273L460 269L452 262L444 260L438 256L434 250L431 232L432 221L435 217L444 213L449 217L450 217L450 212L457 211L466 208L471 204L479 189L482 187L491 198Z"}, {"name": "Suisse", "d": "M658 183L656 189L654 191L643 190L633 186L627 187L625 186L620 180L614 175L592 170L589 172L584 178L573 181L561 190L554 193L538 191L516 201L503 202L496 201L491 198L482 187L475 167L459 150L454 148L450 152L446 150L445 139L450 131L446 128L429 125L428 120L430 109L433 98L441 84L424 61L425 58L431 51L433 46L432 41L427 36L395 28L381 28L368 30L350 43L329 47L322 52L312 66L311 70L316 85L319 87L324 86L325 93L319 99L306 107L295 120L288 123L281 120L271 121L256 126L262 114L256 105L256 101L262 98L274 92L284 91L285 89L287 75L294 57L294 54L288 46L277 39L279 35L278 25L296 0L658 0L658 183Z"}, {"name": "Monaco", "d": "M570 842L563 850L555 848L556 841L564 836L568 838L570 842Z"}]};
+const GROUPS = {
+  nord: { label: "Savoie · Haute-Savoie", deps: ["73", "74"], v: "--g1" },
+  isere: { label: "Isère", deps: ["38"], v: "--g3" },
+  sud: { label: "Alpes du Sud", deps: ["05", "04", "06"], v: "--g2" },
+};
+const DEPN = { "73": "Savoie", "74": "Haute-Savoie", "38": "Isère", "05": "Hautes-Alpes", "04": "Alpes-de-Haute-Provence", "06": "Alpes-Maritimes" };
+const grp = d => d === "73" || d === "74" ? "nord" : d === "38" ? "isere" : "sud";
+// id, name, dep, massif, lat, lon, km, lifts, pistes total, mix [v,b,r,n], 1 jour, 6 jours, saison, frontière, tome, note
+const RAW = [
+ ["3v","Les 3 Vallées","73","Tarentaise",45.39,6.565,600,183,339,[58,132,112,37],84.2,421,1620,"","1","Le plus grand domaine relié du monde : Courchevel, Méribel, Les Menuires, Val Thorens."],
+ ["pds","Les Portes du Soleil","74","Chablais",46.19,6.775,600,null,null,null,73,373,1303,"Suisse","2","Douze stations entre France et Suisse, d'Avoriaz à Champéry."],
+ ["evasion","Évasion Mont-Blanc","74","Pays du Mont-Blanc",45.857,6.617,445,null,null,null,65,324.5,1189,"","2","Megève, Combloux, Saint-Gervais : ski en forêt face au Mont-Blanc."],
+ ["paradiski","Paradiski","73","Tarentaise",45.56,6.78,425,193,264,[12,137,79,36],78,412,860,"","1","La Plagne et Les Arcs reliées par le Vanoise Express, deux glaciers."],
+ ["sybelles","Les Sybelles","73","Maurienne",45.245,6.27,310,77,145,[26,62,42,15],60.5,307.2,1521,"","1","Le Corbier, La Toussuire, Saint-Sorlin : 310 km au prix d'une station moyenne."],
+ ["tignes","Tignes – Val d'Isère","73","Haute-Tarentaise",45.45,6.95,300,88,158,[21,67,41,29],78,468,1130,"","1","60 % des pistes au-dessus de 2 200 m, glaciers de la Grande Motte et du Pissaillas."],
+ ["gm","Le Grand Massif","74","Giffre",46.005,6.69,265,74,152,[25,67,48,12],63,378,1316,"","2","Flaine, Samoëns, Les Carroz : de 700 à 2 500 m, avec la piste des Cascades."],
+ ["serre","Serre Chevalier","05","Briançonnais",44.94,6.56,250,null,82,null,68,345,903,"","4","Quinze villages en vallée, ski en mélèzes et soleil du Sud."],
+ ["huez","Alpe d'Huez Grand Domaine","38","Oisans",45.09,6.07,245,null,111,null,68,336.5,1127.5,"","3","Du Pic Blanc à 3 330 m jusqu'à Oz et Vaujany, avec la Sarenne de 16 km."],
+ ["2alpes","Les 2 Alpes","38","Oisans",45.01,6.125,220,null,null,null,68,333,1227.5,"","3","Glacier skiable, snowpark réputé et ambiance festive."],
+ ["diamant","Espace Diamant","73","Beaufortain – Val d'Arly",45.76,6.53,192,70,157,[30,67,50,10],52,260,846,"","1","Les Saisies et cinq villages : familial, nordique, vue sur le Mont-Blanc."],
+ ["foret","La Forêt Blanche","05","Guillestrois",44.57,6.70,185,null,109,[15,50,35,9],58,298,970,"","4","Vars et Risoul reliées, dans le plus grand domaine des Alpes du Sud."],
+ ["lumiere","Espace Lumière","04","Ubaye – Haut-Verdon",44.37,6.60,180,41,92,[12,36,36,8],51,259,781,"","5","Pra Loup et Val d'Allos La Foux, ski en mélèzes au soleil."],
+ ["valmorel","Grand Domaine (Valmorel)","73","Tarentaise",45.46,6.44,165,50,103,null,56.1,null,null,"","1","Valmorel et Saint-François-Longchamp : village piéton, très familial."],
+ ["galibier","Galibier-Thabor","73","Maurienne",45.165,6.43,160,29,89,[16,33,33,8],54.9,278.5,1098,"","1","Valloire et Valmeinier, de 1 430 à 2 750 m."],
+ ["rosiere","La Rosière – San Bernardo","73","Haute-Tarentaise",45.627,6.85,154,38,87,[8,27,34,18],59,301,796,"Italie","1","Relié à La Thuile en Italie, héliski côté italien."],
+ ["vt","Val Thorens – Orelle","73","Tarentaise / Maurienne",45.298,6.58,150,33,74,[10,32,25,7],73.5,367.5,1310,"","1","La plus haute station d'Europe, neige garantie et vie nocturne."],
+ ["auron","Auron","06","Mercantour",44.225,6.93,135,null,43,null,44,217,689,"","5","À 1 h 30 de Nice, grand domaine ensoleillé."],
+ ["clusaz","La Clusaz – Manigod","74","Aravis",45.905,6.425,125,null,85,null,56.5,285,1095,"","2","Village savoyard vivant, freestyle et reblochon."],
+ ["valcenis","Val Cenis","73","Haute-Maurienne",45.28,6.90,125,null,null,null,50,258.5,880,"","1","Longues pistes de village en village, au pied du Mont-Cenis."],
+ ["villard","Villard-de-Lans – Corrençon","38","Vercors",45.07,5.555,125,null,36,null,46,266,749,"","3","À 40 min de Grenoble, 153 km de ski nordique en plus de l'alpin."],
+ ["morzine","Morzine – Les Gets","74","Chablais",46.165,6.69,120,null,null,null,56,312,915,"","2","Le cœur village des Portes du Soleil."],
+ ["chatel","Châtel","74","Chablais",46.27,6.84,120,null,null,null,55,281,780,"Suisse","2","Village authentique, porte vers la Suisse et le Linga."],
+ ["contamines","Les Contamines – Hauteluce","74","Pays du Mont-Blanc",45.82,6.725,120,null,null,null,55.8,283.4,865,"","2","Neige fiable côté Mont-Blanc, relié au Beaufortain."],
+ ["7laux","Les 7 Laux","38","Belledonne",45.27,6.03,120,null,null,null,45,225,910.83,"","3","Le grand domaine le plus proche de Grenoble et Chambéry."],
+ ["montgenevre","Montgenèvre","05","Briançonnais",44.932,6.725,110,null,91,null,58.5,301,925,"Italie","4","Porte de la Voie Lactée italienne, enfants de moins de 6 ans gratuits."],
+ ["orcieres","Orcières 1850","05","Champsaur",44.69,6.325,100,null,null,null,48.5,267,839,"","4","Station skis aux pieds, Roll'Air Cimes et grand espace ludique."],
+ ["devoluy","Dévoluy","05","Dévoluy",44.635,5.92,100,null,null,null,46,226,822,"","4","Superdévoluy et La Joue du Loup, grand plateau calcaire."],
+ ["orres","Les Orres","05","Embrunais",44.495,6.555,100,null,null,null,45.5,239,788,"","4","Vue sur le lac de Serre-Ponçon, 100 km pour 45,50 €."],
+ ["chamonix","Chamonix – Mont-Blanc","74","Pays du Mont-Blanc",45.924,6.869,null,null,null,null,null,null,null,"Suisse · Italie","2","Aiguille du Midi, Vallée Blanche, Grands Montets : la capitale de l'alpinisme."],
+ ["houches","Les Houches – Saint-Gervais","74","Pays du Mont-Blanc",45.885,6.79,55,null,27,null,60,281,965,"","2","La piste Verte de la Coupe du monde, en forêt."],
+ ["bornand","Le Grand-Bornand","74","Aravis",45.942,6.43,84,null,46,null,52,260,754,"","2","Village et Chinaillon, très familial, nordique des Aravis."],
+ ["lagrave","La Grave – La Meije","05","Briançonnais – Meije",45.046,6.306,null,null,null,null,null,null,null,"","4","Hors-piste glaciaire sous la Meije, une seule remontée, aucune piste damée en haut."],
+ ["chazelet","Le Chazelet","05","Briançonnais – Meije",45.06,6.275,null,null,null,null,22,null,null,"","4","Petit domaine face à la Meije, parfait pour une journée à petit prix."],
+ ["saintefoy","Sainte-Foy-Tarentaise","73","Haute-Tarentaise",45.585,6.88,32,null,23,null,46,276,714,"","1","Peu de pistes, beaucoup de hors-piste en forêt, ambiance calme."],
+ ["pralognan","Pralognan-la-Vanoise","73","Tarentaise – Vanoise",45.38,6.72,25,null,24,null,44,229,509,"","1","Village d'alpinisme au pied de la Vanoise, cascade de glace et randonnée."],
+ ["bonneval","Bonneval-sur-Arc","73","Haute-Maurienne",45.372,7.05,null,null,null,null,null,null,null,"","1","Village classé, ski de randonnée et haute montagne au fond de la Maurienne."],
+ ["areches","Arêches-Beaufort","73","Beaufortain",45.685,6.57,50,null,30,null,41,214,570,"","1","Pierra Menta, ski de randonnée et forêt."],
+ ["karellis","Les Karellis","73","Maurienne",45.226,6.405,60,14,null,null,36,191,520,"","1","Station associative, séjours tout compris pour les familles."],
+ ["revard","Savoie Grand Revard","73","Bauges",45.645,5.98,null,13,27,[5,11,8,3],25.5,null,null,"","1","À 30 min de Chambéry, 140 km de ski de fond et un petit domaine alpin."],
+ ["aillons","Aillons-Margériaz","73","Bauges",45.6,6.09,25,null,22,null,29.9,152.4,390.6,"","1","Petite station des Bauges, idéale pour débuter."],
+ ["stpierre","Saint-Pierre-de-Chartreuse","38","Chartreuse",45.34,5.81,null,null,null,null,15,null,null,"","3","La journée la moins chère du guide, au cœur de la Chartreuse."],
+ ["lans","Lans-en-Vercors","38","Vercors",45.125,5.59,null,null,null,null,27,null,null,"","3","Petit domaine familial du Vercors, à 30 min de Grenoble."],
+ ["chamrousse","Chamrousse","38","Belledonne",45.11,5.88,null,null,null,null,null,null,null,"","3","La station des Grenoblois, au-dessus de la ville."],
+ ["ceillac","Ceillac","05","Queyras",44.667,6.78,null,null,null,null,null,null,null,"","4","Haut lieu de la cascade de glace et du ski de randonnée dans le Queyras."],
+ ["sainteanne","Sainte-Anne-la-Condamine","04","Ubaye",44.44,6.71,null,null,null,null,26.5,null,null,"","5","Petite station de l'Ubaye, journée à petit prix."],
+ ["isola","Isola 2000","06","Mercantour",44.187,7.157,null,null,85,[9,37,26,13],null,null,null,"","5","Station à 2 000 m, la plus enneigée des Alpes-Maritimes."],
+ ["valberg","Valberg – Beuil","06","Préalpes de Nice",44.095,6.93,null,null,null,null,null,null,null,"","5","À 1 h 30 de Nice, station familiale des Préalpes."],
+];
+// Station de référence (page skiinfo.fr), altitude bas/haut (m), ouverture et fermeture prévues, position du village (lat, lon)
+const SKI = "https://www.skiinfo.fr/";
+const EXTRA = {
+ "3v":["Méribel","alpes-du-nord/meribel",1100,2952,"2026-12-05","2027-04-17",45.396,6.566],
+ pds:["Avoriaz","alpes-du-nord/avoriaz",1150,2277,"2026-12-11","2027-04-18",46.191,6.774],
+ evasion:["Megève","alpes-du-nord/megeve",1050,2350,"2026-12-12","2027-04-04",45.857,6.618],
+ paradiski:["La Plagne","alpes-du-nord/la-plagne",1250,3250,"2026-12-12","2027-04-24",45.507,6.677],
+ sybelles:["Le Corbier","alpes-du-nord/le-corbier",1100,2620,"2026-12-12","2027-04-09",45.240,6.271],
+ tignes:["Tignes","alpes-du-nord/tignes",1550,3450,"2026-11-21","2027-05-02",45.468,6.906],
+ gm:["Flaine","alpes-du-nord/flaine",1600,2500,"2026-12-05","2027-04-04",46.006,6.690],
+ serre:["Serre Chevalier","alpes-du-sud/serre-chevalier",1200,2800,"2026-12-05","2027-04-18",44.928,6.588],
+ huez:["Alpe d'Huez","alpes-du-nord/alpe-dhuez",1860,3330,"2026-12-05","2027-04-25",45.092,6.070],
+ "2alpes":["Les 2 Alpes","alpes-du-nord/les-2-alpes",1300,3600,"2026-11-28","2027-05-31",45.011,6.124],
+ diamant:["Les Saisies","alpes-du-nord/les-saisies",1150,2069,"2026-12-05","2027-04-10",45.758,6.531],
+ foret:["Vars","alpes-du-sud/vars",1650,2750,"2026-12-05","2027-04-11",44.578,6.700],
+ lumiere:["Pra Loup","alpes-du-sud/praloup",1500,2500,"2026-12-12","2027-04-04",44.367,6.603],
+ valmorel:["Valmorel","alpes-du-nord/valmorel",1350,2550,"2026-12-19","2027-04-11",45.461,6.443],
+ galibier:["Valloire","alpes-du-nord/valloire",1430,2750,"2026-12-05","2027-04-09",45.165,6.430],
+ rosiere:["La Rosière","alpes-du-nord/la-rosiere-1850",1850,2800,"2026-12-12","2027-04-12",45.627,6.850],
+ vt:["Val Thorens","alpes-du-nord/val-thorens",1825,3230,"2026-11-21","2027-05-02",45.298,6.580],
+ auron:["Auron","alpes-du-sud/auron",1600,2450,"2026-12-05","2027-04-12",44.225,6.931],
+ clusaz:["La Clusaz","alpes-du-nord/la-clusaz",1040,2500,"2026-12-12","2027-04-25",45.904,6.424],
+ valcenis:["Val Cenis","alpes-du-nord/val-cenis",1300,2800,"2026-12-12","2027-04-16",45.287,6.877],
+ villard:["Villard-de-Lans","alpes-du-nord/villard-de-lans",1143,2050,"2026-12-12","2027-03-28",45.072,5.553],
+ morzine:["Morzine","alpes-du-nord/morzine",1000,2000,"2026-12-19","2027-04-04",46.179,6.709],
+ chatel:["Châtel","alpes-du-nord/chatel",1100,2200,"2026-12-04","2027-04-11",46.270,6.840],
+ contamines:["Les Contamines","alpes-du-nord/les-contamines-montjoie",1160,2450,"2026-12-05","2027-04-11",45.821,6.727],
+ "7laux":["Les 7 Laux","alpes-du-nord/les-7-laux",1350,2400,"2026-12-19","2027-03-28",45.257,5.993],
+ montgenevre:["Montgenèvre","alpes-du-sud/montgenevre",1850,2700,"2026-11-28","2027-04-17",44.931,6.723],
+ orcieres:["Orcières","alpes-du-sud/orcieres",1850,2725,"2026-12-12","2027-04-11",44.694,6.326],
+ devoluy:["SuperDévoluy","alpes-du-sud/superdevoluy-la-joue-du-loup",1500,2500,"2026-12-12","2027-04-11",44.634,5.927],
+ orres:["Les Orres","alpes-du-sud/les-orres",1550,2720,"2026-12-05","2027-04-11",44.497,6.557],
+ chamonix:["Chamonix","alpes-du-nord/chamonix",1042,3275,"2026-11-28","2027-05-02",45.924,6.869],
+ houches:["Les Houches","alpes-du-nord/les-houches",990,1900,"2026-12-19","2027-04-18",45.890,6.798],
+ bornand:["Le Grand-Bornand","alpes-du-nord/le-grand-bornand",1000,2100,"2026-12-12","2027-04-11",45.941,6.428],
+ lagrave:["La Grave","alpes-du-sud/la-grave-la-meije",1450,3550,"2026-12-20","2027-05-03",45.046,6.306],
+ chazelet:["Le Chazelet","alpes-du-sud/le-chazelet",1800,2300,"2026-12-19","2027-03-14",45.058,6.283],
+ saintefoy:["Sainte-Foy","alpes-du-nord/sainte-foy-tarentaise",1550,2620,"2026-12-12","2027-04-18",45.584,6.886],
+ pralognan:["Pralognan","alpes-du-nord/pralognan-la-vanoise",1410,2355,"2026-12-19","2027-04-04",45.381,6.721],
+ bonneval:["Bonneval-sur-Arc","alpes-du-nord/bonneval-sur-arc",1800,3000,"2026-12-19","2027-04-23",45.372,7.049],
+ areches:["Arêches-Beaufort","alpes-du-nord/areches-beaufort",1080,2320,"2026-12-19","2027-04-04",45.687,6.567],
+ karellis:["Les Karellis","alpes-du-nord/les-karellis",1600,2520,"2026-12-19","2027-04-10",45.226,6.405],
+ revard:["Savoie Grand Revard","alpes-du-nord/savoie-grand-revard",1350,1562,"2026-12-19","2027-03-28",45.645,5.982],
+ aillons:["Aillons-Margériaz","alpes-du-nord/les-aillons-margeriaz",1400,1900,"2026-12-19","2027-03-28",45.600,6.091],
+ stpierre:["Saint-Pierre-de-Chartreuse","alpes-du-nord/saint-pierre-de-chartreuse",1100,1789,"2026-12-26","2027-03-07",45.343,5.813],
+ lans:["Lans-en-Vercors","alpes-du-nord/lans-en-vercors",1420,1807,"2026-12-05","2027-03-14",45.128,5.589],
+ chamrousse:["Chamrousse","alpes-du-nord/chamrousse",1400,2250,"2026-12-05","2027-04-11",45.111,5.876],
+ ceillac:["Ceillac","alpes-du-sud/ceillac",1700,2450,"2026-12-19","2027-03-28",44.667,6.777],
+ sainteanne:["Sainte-Anne","alpes-du-sud/sainte-anne-la-condamine",1830,2400,"2026-12-19","2027-03-21",44.437,6.716],
+ isola:["Isola 2000","alpes-du-sud/isola-2000",2000,2610,"2026-12-05","2027-04-11",44.187,7.157],
+ valberg:["Valberg","alpes-du-sud/valberg",1700,2100,"2026-12-19","2027-04-04",44.095,6.932],
+};
+const CITIES = [["Paris",48.8566,2.3522],["Lyon",45.7640,4.8357],["Grenoble",45.1885,5.7245],["Chambéry",45.5646,5.9178],["Annecy",45.8992,6.1294],["Genève",46.2044,6.1432],["Marseille",43.2965,5.3698],["Nice",43.7102,7.2620]];
+const S = RAW.map(r => { const x = EXTRA[r[0]]; return { id: r[0], name: r[1], dep: r[2], massif: r[3], lat: x[6], lon: x[7], km: r[6], lifts: r[7], pistes: r[8], mix: r[9], j1: r[10], j6: r[11], saison: r[12], front: r[13], tome: r[14], note: r[15], g: grp(r[2]),
+  ref: x[0], wc: SKI + x[1] + "/webcams", alt0: x[2], alt1: x[3], open: x[4], close: x[5] }; });
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[-'’]/g, " ");
+S.forEach(s => s.key = norm([s.name, s.massif, s.ref, DEPN[s.dep] || "", s.dep].join(" ")));
+const hav = (a, b, c, d) => { const R = 6371, r = Math.PI / 180, x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
+const fmtDate = d => new Date(d + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+const fmtAlt = v => v.toLocaleString("fr-FR") + " m";
+const BY = Object.fromEntries(S.map(s => [s.id, s]));
+const PROFILS = {
+  familles: { label: "Familles", ids: ["3v","valmorel","pds","bornand","diamant","villard","karellis","orcieres"],
+    names: ["Les Menuires / Courchevel Moriond (3 Vallées)","Valmorel – Grand Domaine","Les Gets / Châtel (Portes du Soleil)","Le Grand-Bornand","Les Saisies – Espace Diamant","Villard-de-Lans – Corrençon","Les Karellis","Orcières 1850"] },
+  copains: { label: "Bandes de copains", ids: ["vt","tignes","morzine","2alpes","clusaz","serre","montgenevre","foret"],
+    names: ["Val Thorens (3 Vallées)","Val d'Isère – Tignes","Morzine / Avoriaz (Portes du Soleil)","Les 2 Alpes","La Clusaz","Serre Chevalier","Montgenèvre – Voie Lactée","Forêt Blanche (Vars–Risoul)"] },
+  alpi: { label: "Alpinistes et freeride", ids: ["chamonix","lagrave","tignes","saintefoy","bonneval","areches","rosiere","ceillac"],
+    names: ["Chamonix – Mont-Blanc Unlimited","La Grave – La Meije","Tignes – Val d'Isère (glaciers)","Sainte-Foy-Tarentaise","Bonneval-sur-Arc","Arêches-Beaufort / Pralognan","La Rosière (héliski)","Ceillac (cascade de glace)"] },
+  budget: { label: "Petit budget", ids: ["stpierre","revard","chazelet","lans","sainteanne","karellis","orres","sybelles"],
+    names: ["Saint-Pierre-de-Chartreuse · 15 €","Savoie Grand Revard · 25,50 €","Le Chazelet · 22 €","Lans / Gresse-en-Vercors · 27 €","Sainte-Anne-la-Condamine · 26,50 €","Les Karellis · 36 €, séjour tout compris","Les Orres · 45,50 € pour 100 km","Les Sybelles · 60,50 € pour 310 km"] },
+};
+const rankOf = (id) => Object.entries(PROFILS).flatMap(([k, p]) => p.ids.map((x, i) => x === id ? { k, i } : null)).filter(Boolean);
+
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const gcol = g => css(GROUPS[g].v);
+const eur = v => v == null ? null : v.toLocaleString("fr-FR", { minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2 }) + " €";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const NS = "http://www.w3.org/2000/svg";
+const LON0 = 4.75, LAT1 = 46.55, K = 300, C = Math.cos(Math.PI / 4);
+const proj = (lon, lat) => [(lon - LON0) * C * K, (LAT1 - lat) * K];
+
+let state = { profil: "all", zones: new Set(Object.keys(GROUPS)), prix: 90, sel: "3v", sort: { k: "km", dir: -1 }, q: "", from: "Lyon" };
+try { const s = localStorage.getItem("atlas-sel"); if (s && BY[s]) state.sel = s; const f = localStorage.getItem("atlas-from"); if (f && CITIES.some(c => c[0] === f)) state.from = f; } catch (e) {}
+if (location.hash && BY[location.hash.slice(1)]) state.sel = location.hash.slice(1);
+const cityOf = () => CITIES.find(c => c[0] === state.from);
+const updDist = () => { const c = cityOf(); S.forEach(s => s.dist = Math.round(hav(c[1], c[2], s.lat, s.lon))); };
+updDist();
+
+const visible = s => (state.profil === "all" || PROFILS[state.profil].ids.includes(s.id))
+  && state.zones.has(s.g) && (state.prix >= 90 || (s.j1 != null && s.j1 <= state.prix))
+  && (!state.q || state.q.split(" ").every(w => s.key.includes(w)));
+
+/* header facts */
+(() => {
+  const big = S.filter(s => s.km >= 100).length;
+  const min = Math.min(...S.filter(s => s.j1).map(s => s.j1));
+  const totalKm = S.filter(s => s.km >= 100 && !["vt","morzine","chatel"].includes(s.id)).reduce((a, s) => a + s.km, 0);
+  document.getElementById("facts").innerHTML = [
+    [S.length, "stations sur la carte"], [big, "domaines de 100 km et plus"], [eur(min), "la journée la moins chère"], ["5 + 1", "tomes et un comparatif"],
+  ].map(([b, t]) => `<div class="fact"><b>${b}</b>${t}</div>`).join("");
+})();
+
+/* filters */
+(() => {
+  const fp = document.getElementById("fProfil");
+  [["all", "Tous"], ...Object.entries(PROFILS).map(([k, p]) => [k, p.label])].forEach(([k, l]) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.dataset.k = k; b.textContent = l;
+    b.onclick = () => { state.profil = k; render(); }; fp.appendChild(b);
+  });
+  const fz = document.getElementById("fZone");
+  Object.entries(GROUPS).forEach(([k, g]) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.dataset.k = k;
+    b.innerHTML = `<span class="dot" data-g="${k}"></span>${g.label}`;
+    b.onclick = () => { state.zones.has(k) && state.zones.size > 1 ? state.zones.delete(k) : state.zones.add(k); render(); };
+    fz.appendChild(b);
+  });
+  const fr = document.getElementById("fPrix");
+  fr.oninput = () => { state.prix = +fr.value; render(); };
+  const q = document.getElementById("q");
+  q.addEventListener("input", () => {
+    state.q = norm(q.value.trim()).replace(/\s+/g, " ");
+    const hits = S.filter(visible);
+    if (state.q && hits.length && !hits.some(s => s.id === state.sel)) state.sel = hits.sort((a, b) => (b.km || 0) - (a.km || 0))[0].id;
+    render();
+  });
+  q.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); const h = S.filter(visible); if (h.length) { select(h[0].id); const s = BY[h[0].id]; const d = 0.5; fitTo(s.lon - d, s.lat + d * .7, s.lon + d, s.lat - d * .7); } } });
+  const fs = document.getElementById("from");
+  fs.innerHTML = CITIES.map(c => `<option${c[0] === state.from ? " selected" : ""}>${c[0]}</option>`).join("");
+  fs.onchange = () => { state.from = fs.value; try { localStorage.setItem("atlas-from", state.from); } catch (e) {} updDist(); render(); };
+})();
+
+/* map */
+const svg = document.getElementById("map");
+const W = MAP.w, H = MAP.h;
+let vb = { x: 0, y: 0, w: W, h: H };
+const home = () => ({ x: 0, y: 0, w: W, h: H });
+const ZOOMS = [["Alpes du Nord", 5.4, 46.4, 7.2, 44.95], ["Tarentaise", 6.3, 45.72, 7.1, 45.2], ["Mont-Blanc · Chablais", 6.35, 46.35, 7.0, 45.75], ["Alpes du Sud", 5.7, 45.15, 7.4, 43.95]];
+function fitTo(lon0, lat0, lon1, lat1) {
+  const [x0, y0] = proj(lon0, lat0), [x1, y1] = proj(lon1, lat1);
+  const r = svg.clientWidth / svg.clientHeight || W / H;
+  let w = x1 - x0, h = y1 - y0;
+  if (w / h > r) { const nh = w / r; vb = { x: x0, y: y0 - (nh - h) / 2, w, h: nh }; }
+  else { const nw = h * r; vb = { x: x0 - (nw - w) / 2, y: y0, w: nw, h }; }
+  applyVB();
+}
+function fitHome() {
+  const r = svg.clientWidth / svg.clientHeight || W / H;
+  if (W / H > r) { const nh = W / r; vb = { x: 0, y: (H - nh) / 2, w: W, h: nh }; }
+  else { const nw = H * r; vb = { x: (W - nw) / 2, y: 0, w: nw, h: H }; }
+  applyVB();
+}
+const scaleK = () => Math.max(vb.w / W, vb.h / H);
+function applyVB() {
+  svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  const k = svg.clientWidth ? vb.w / svg.clientWidth : 1;   // map units per screen px
+  svg.style.setProperty("--k", k);
+  svg.querySelectorAll(".mk").forEach(c => c.setAttribute("r", c.dataset.r * k));
+  svg.querySelectorAll(".mk").forEach(c => c.style.strokeWidth = (c.classList.contains("sel") ? 2.5 : 2) * k);
+  svg.querySelectorAll("text").forEach(t => { t.style.fontSize = (t.dataset.fs * k) + "px"; if (t.classList.contains("mlab")) t.style.strokeWidth = 3.5 * k; });
+  svg.querySelectorAll(".mlab").forEach(t => { const s = BY[t.dataset.id]; const [x, y] = proj(s.lon, s.lat); t.setAttribute("x", x + (+t.dataset.r + 4) * k); t.setAttribute("y", y + 4 * k); });
+  svg.querySelectorAll("path").forEach(p => p.style.strokeWidth = p.dataset.sw * k);
+}
+function buildMap() {
+  let h = "";
+  MAP.countries.forEach(c => h += `<path class="country" data-sw="0.8" d="${c.d}"/>`);
+  MAP.others.forEach(d => h += `<path class="other" data-sw="0.6" d="${d}"/>`);
+  MAP.deps.forEach(d => h += `<path class="dep${d.code === "26" ? "" : " on"}" data-sw="1" d="${d.d}"/>`);
+  MAP.deps.forEach(d => h += `<text class="deplab" data-fs="11" x="${d.c[0]}" y="${d.c[1]}" text-anchor="middle">${d.code === "26" ? "Drôme" : DEPN[d.code]}</text>`);
+  const [sx, sy] = proj(7.45, 46.45), [ix, iy] = proj(7.45, 45.0);
+  h += `<text class="ctylab" data-fs="15" x="${sx}" y="${sy}" text-anchor="middle">Suisse</text><text class="ctylab" data-fs="15" x="${ix}" y="${iy}" text-anchor="middle">Italie</text>`;
+  const order = [...S].sort((a, b) => (b.km || 0) - (a.km || 0));
+  order.forEach(s => {
+    const [x, y] = proj(s.lon, s.lat), r = s.km ? 4 + Math.sqrt(s.km) * 0.5 : 4.5;
+    h += `<circle class="mk" data-id="${s.id}" data-r="${r}" cx="${x}" cy="${y}" r="${r}" fill="${gcol(s.g)}" tabindex="0" role="button" aria-label="${esc(s.name)}"/>`;
+  });
+  order.forEach(s => {
+    const r = s.km ? 4 + Math.sqrt(s.km) * 0.5 : 4.5;
+    h += `<text class="mlab" data-fs="11.5" data-id="${s.id}" data-r="${r}">${esc(s.name)}</text>`;
+  });
+  svg.innerHTML = h;
+  svg.querySelectorAll(".mk").forEach(c => {
+    c.addEventListener("click", e => { e.stopPropagation(); select(c.dataset.id); });
+    c.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(c.dataset.id); } });
+    c.addEventListener("pointerenter", () => showTip(c.dataset.id, c));
+    c.addEventListener("pointerleave", hideTip);
+  });
+  const z = document.getElementById("zooms");
+  ZOOMS.forEach(([l, a, b, c2, d]) => { const bt = document.createElement("button"); bt.type = "button"; bt.textContent = l; bt.onclick = () => fitTo(a, b, c2, d); z.appendChild(bt); });
+  document.getElementById("legend").innerHTML = Object.entries(GROUPS).map(([k, g]) => `<div><span class="dot" data-g="${k}"></span>${g.label}</div>`).join("") + `<div style="color:var(--ink-3)">Taille du point : km de pistes</div>`;
+}
+const tip = document.getElementById("tip");
+function showTip(id, el) {
+  const s = BY[id], box = document.getElementById("mapbox").getBoundingClientRect(), r = el.getBoundingClientRect();
+  tip.innerHTML = `<b>${esc(s.name)}</b> · ${s.km ? s.km + " km" : "petit domaine"}${s.j1 ? " · " + eur(s.j1) : ""}`;
+  tip.style.left = Math.min(Math.max(r.left + r.width / 2 - box.left, 90), box.width - 90) + "px"; tip.style.top = (r.top - box.top) + "px"; tip.hidden = false;
+}
+function hideTip() { tip.hidden = true; }
+// pan / zoom
+(() => {
+  let drag = null, moved = false;
+  svg.addEventListener("pointerdown", e => { if (e.target.classList.contains("mk")) return; drag = { x: e.clientX, y: e.clientY, vb: { ...vb } }; moved = false; svg.setPointerCapture(e.pointerId); svg.classList.add("drag"); });
+  svg.addEventListener("pointermove", e => { if (!drag) return; const k = vb.w / svg.clientWidth; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 3) moved = true; vb.x = drag.vb.x - dx * k; vb.y = drag.vb.y - dy * k; applyVB(); });
+  const end = () => { drag = null; svg.classList.remove("drag"); };
+  svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
+  svg.addEventListener("wheel", e => { e.preventDefault(); const r = svg.getBoundingClientRect(); zoom(e.deltaY < 0 ? 1.25 : 0.8, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height); }, { passive: false });
+  document.getElementById("zin").onclick = () => zoom(1.4, .5, .5);
+  document.getElementById("zout").onclick = () => zoom(1 / 1.4, .5, .5);
+  document.getElementById("zreset").onclick = fitHome;
+})();
+function zoom(f, fx, fy) {
+  const nw = Math.min(Math.max(vb.w / f, W / 12), W * 1.6), nh = nw * vb.h / vb.w;
+  vb.x += (vb.w - nw) * fx; vb.y += (vb.h - nh) * fy; vb.w = nw; vb.h = nh; applyVB();
+}
+
+/* card */
+function mixHTML(s) {
+  if (!s.mix) return "";
+  const t = s.mix.reduce((a, b) => a + b, 0), names = ["vertes", "bleues", "rouges", "noires"], v = ["--pv", "--pb", "--pr", "--pn"];
+  return `<div><div class="mix" role="img" aria-label="Répartition des pistes">${s.mix.map((n, i) => `<i style="width:${n / t * 100}%;background:var(${v[i]})"></i>`).join("")}</div>
+  <div class="mixlab">${s.mix.map((n, i) => `<span><span class="dot" style="background:var(${v[i]})"></span><b class="num">${n}</b> ${names[i]}</span>`).join("")}</div></div>`;
+}
+function cell(label, v) { return `<div><small>${label}</small>${v == null ? '<span class="na">non publié</span>' : `<span>${v}</span>`}</div>`; }
+function renderCard() {
+  const s = BY[state.sel];
+  const ranks = rankOf(s.id);
+  document.getElementById("card").innerHTML = `
+    <div class="meta"><span class="dot" style="background:${gcol(s.g)}"></span>${DEPN[s.dep]} (${s.dep}) · ${esc(s.massif)}${s.front ? " · relié " + esc(s.front) : ""}</div>
+    <h2>${esc(s.name)}</h2>
+    <p class="note">${esc(s.note)}</p>
+    <div class="kv">
+      ${cell("Pistes", s.km ? s.km + " km" : null)}${cell("Nombre de pistes", s.pistes)}${cell("Remontées", s.lifts)}
+      ${cell("1 jour adulte", eur(s.j1))}${cell("6 jours adulte", eur(s.j6))}${cell("Saison adulte", eur(s.saison))}
+    </div>
+    <div class="facts2">
+      <div><small>Altitude · ${esc(s.ref)}</small><span class="num">${fmtAlt(s.alt0)} – ${fmtAlt(s.alt1)}</span></div>
+      <div><small>Saison prévue</small><span>${fmtDate(s.open)} → ${fmtDate(s.close)}</span></div>
+    </div>
+    <div class="actions">
+      <a class="act" href="${s.wc}" target="_blank" rel="noopener"><span class="live" aria-hidden="true"></span>Webcams en direct · ${esc(s.ref)}</a>
+      <a class="act" href="https://www.google.com/maps/dir/?api=1&amp;origin=${encodeURIComponent(state.from + ", France")}&amp;destination=${s.lat},${s.lon}&amp;travelmode=driving" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14M7 17l1.5-6h7L17 17M8 21v-2M16 21v-2"/><circle cx="12" cy="6" r="2.5"/></svg>Itinéraire depuis ${esc(state.from)} · ${s.dist} km à vol d'oiseau</a>
+    </div>
+    <p class="srcnote">Altitude, dates et webcams : skiinfo.fr, octobre 2026. Les dates d'ouverture dépendent de l'enneigement.</p>
+    ${mixHTML(s)}
+    ${ranks.length ? `<div class="badges">${ranks.map(r => `<span class="badge">${PROFILS[r.k].label} · n° <b>${r.i + 1}</b></span>`).join("")}</div>` : ""}
+    <div class="teaser"><b>Dans le Tome ${s.tome} du guide</b>
+      <ul><li>Tarifs enfants, seniors, familles</li><li>Cartes du massif</li><li>Hébergements et téléphones</li><li>Restaurants et commerces</li><li>Piscine, spa, enfants</li><li>Notre avis par profil</li></ul>
+      <a class="cta" href="${GUIDE_URL || "#guide"}" target="_blank" rel="noopener">Voir le guide complet</a></div>`;
+}
+function select(id, scroll) {
+  state.sel = id; try { localStorage.setItem("atlas-sel", id); } catch (e) {}
+  render();
+  if (scroll) document.getElementById("mapbox").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+
+/* list */
+document.querySelectorAll("#list th").forEach(th => th.onclick = () => {
+  const k = th.dataset.k; state.sort = { k, dir: state.sort.k === k ? -state.sort.dir : (k === "name" || k === "dep" ? 1 : -1) }; renderList();
+});
+function renderList() {
+  const { k, dir } = state.sort;
+  const rows = S.filter(visible).sort((a, b) => {
+    const x = a[k], y = b[k];
+    if (x == null && y == null) return a.name.localeCompare(b.name, "fr"); if (x == null) return 1; if (y == null) return -1;
+    return (typeof x === "string" ? x.localeCompare(y, "fr") : x - y) * dir;
+  });
+  document.querySelector("#list tbody").innerHTML = rows.length ? rows.map(s => `<tr data-id="${s.id}" class="${s.id === state.sel ? "sel" : ""}">
+    <td><span class="dot" style="background:${gcol(s.g)};margin-right:6px"></span>${esc(s.name)}</td>
+    <td class="r num">${s.km ?? "—"}</td><td class="r num">${s.j1 != null ? eur(s.j1) : "—"}</td><td class="r num">${s.dist} km</td></tr>`).join("")
+    : `<tr><td colspan="4" class="empty">Aucune station ne correspond. Essayez un autre nom ou retirez un filtre.</td></tr>`;
+  document.querySelectorAll("#list tbody tr[data-id]").forEach(tr => tr.onclick = () => select(tr.dataset.id));
+  document.getElementById("count").textContent = `${rows.length} station${rows.length > 1 ? "s" : ""} affichée${rows.length > 1 ? "s" : ""} · distance à vol d'oiseau depuis ${state.from}`;
+  document.querySelectorAll("#list th").forEach(th => th.textContent = th.textContent.replace(/ [↑↓]$/, "") + (th.dataset.k === k ? (dir > 0 ? " ↑" : " ↓") : ""));
+}
+
+/* scatter */
+function renderScatter() {
+  const box = document.getElementById("scatter"), Wc = Math.max(box.clientWidth - 28, 560), Hc = 380;
+  const m = { l: 46, r: 20, t: 14, b: 40 }, pw = Wc - m.l - m.r, ph = Hc - m.t - m.b;
+  const pts = S.filter(s => s.km && s.j1);
+  const x = v => m.l + v / 650 * pw, y = v => m.t + ph - v / 90 * ph;
+  let h = `<svg width="${Wc}" height="${Hc}" viewBox="0 0 ${Wc} ${Hc}" role="img" aria-label="Kilomètres de pistes et prix de la journée par domaine">`;
+  h += `<g class="grid">${[0, 15, 30, 45, 60, 75, 90].map(v => `<line x1="${m.l}" x2="${m.l + pw}" y1="${y(v)}" y2="${y(v)}"/>`).join("")}</g>`;
+  h += `<g class="axis">${[0, 15, 30, 45, 60, 75, 90].map(v => `<text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${v} €</text>`).join("")}
+    ${[0, 100, 200, 300, 400, 500, 600].map(v => `<text x="${x(v)}" y="${m.t + ph + 18}" text-anchor="middle">${v}</text>`).join("")}
+    <text x="${m.l + pw}" y="${Hc - 4}" text-anchor="end">km de pistes</text><text x="${m.l}" y="${m.t - 2}" text-anchor="start" dy="-2"></text></g>`;
+  const label = new Set(["3v", "pds", "evasion", "paradiski", "sybelles", "tignes", "lumiere", "orres", "aillons", "vt", state.sel]);
+  pts.sort((a, b) => (a.id === state.sel) - (b.id === state.sel)).forEach(s => {
+    const cx = x(s.km), cy = y(s.j1), on = visible(s), sel = s.id === state.sel;
+    h += `<circle cx="${cx}" cy="${cy}" r="${sel ? 8 : 5.5}" fill="${gcol(s.g)}" stroke="var(--${sel ? "ink" : "gap"})" stroke-width="2" opacity="${on ? 1 : .2}"/>`;
+    if (label.has(s.id) && on) {
+      const right = cx < m.l + pw - 150;
+      h += `<text class="lbl" x="${cx + (right ? 10 : -10)}" y="${cy + (s.id === "pds" ? 14 : s.id === "vt" ? -8 : 4)}" text-anchor="${right ? "start" : "end"}" style="paint-order:stroke;stroke:var(--sheet);stroke-width:3px">${esc(s.name)}</text>`;
+    }
+    h += `<circle class="hit" data-id="${s.id}" cx="${cx}" cy="${cy}" r="12"><title>${esc(s.name)} · ${s.km} km · ${eur(s.j1)}</title></circle>`;
+  });
+  h += `</svg>`;
+  box.innerHTML = h + `<div class="mixlab" style="margin-top:8px">${Object.entries(GROUPS).map(([k, g]) => `<span><span class="dot" data-g="${k}"></span>${g.label}</span>`).join("")}</div>`;
+  box.querySelectorAll(".hit").forEach(c => c.onclick = () => select(c.dataset.id, true));
+}
+
+/* per km */
+function renderPerKm() {
+  const box = document.getElementById("perkm"), Wc = Math.max(box.clientWidth - 28, 300);
+  const rows = S.filter(s => s.km >= 100 && s.j1).map(s => ({ s, v: s.j1 / s.km * 10 })).sort((a, b) => a.v - b.v);
+  const rh = 22, m = { l: Math.min(190, Wc * .45), r: 52, t: 6 }, pw = Wc - m.l - m.r, Hc = rows.length * rh + m.t + 8;
+  const max = Math.max(...rows.map(r => r.v));
+  let h = `<svg width="${Wc}" height="${Hc}" viewBox="0 0 ${Wc} ${Hc}" role="img" aria-label="Prix pour 10 km de pistes">`;
+  rows.forEach((r, i) => {
+    const y = m.t + i * rh, w = Math.max(r.v / max * pw, 2), sel = r.s.id === state.sel, on = visible(r.s);
+    const nm = r.s.name.length > 26 && m.l < 180 ? r.s.name.slice(0, 24) + "…" : r.s.name;
+    h += `<g opacity="${on ? 1 : .35}"><text class="lbl" x="${m.l - 8}" y="${y + 15}" text-anchor="end">${esc(nm)}</text>
+      <path class="bar${sel ? " sel" : ""}" d="M${m.l} ${y + 4}h${w - 4}a4 4 0 0 1 4 4v6a4 4 0 0 1 -4 4h${-(w - 4)}z"/>
+      <text class="lbl2" x="${m.l + w + 6}" y="${y + 15}">${r.v.toFixed(2).replace(".", ",")} €</text>
+      <rect class="hit" data-id="${r.s.id}" x="0" y="${y}" width="${Wc}" height="${rh}"><title>${esc(r.s.name)} : ${eur(r.s.j1)} pour ${r.s.km} km</title></rect></g>`;
+  });
+  box.innerHTML = h + "</svg>";
+  box.querySelectorAll(".hit").forEach(c => c.onclick = () => select(c.dataset.id, true));
+}
+
+/* piste mix */
+function renderMix() {
+  const box = document.getElementById("mixchart"), Wc = Math.max(box.clientWidth - 28, 300);
+  const rows = S.filter(s => s.mix).map(s => { const t = s.mix.reduce((a, b) => a + b, 0); return { s, t, p: s.mix.map(n => n / t) }; }).sort((a, b) => b.p[0] + b.p[1] - a.p[0] - a.p[1]);
+  const rh = 30, m = { l: Math.min(190, Wc * .45), r: 8, t: 4 }, pw = Wc - m.l - m.r, Hc = rows.length * rh + m.t + 30;
+  const v = ["--pv", "--pb", "--pr", "--pn"], nm = ["vertes", "bleues", "rouges", "noires"];
+  let h = `<svg width="${Wc}" height="${Hc}" viewBox="0 0 ${Wc} ${Hc}" role="img" aria-label="Répartition des pistes par couleur">`;
+  rows.forEach((r, i) => {
+    const y = m.t + i * rh; let x = m.l; const sel = r.s.id === state.sel, on = visible(r.s);
+    const name = r.s.name.length > 26 && m.l < 180 ? r.s.name.slice(0, 24) + "…" : r.s.name;
+    h += `<g opacity="${on ? 1 : .35}"><text class="lbl" x="${m.l - 8}" y="${y + 18}" text-anchor="end" font-weight="${sel ? 700 : 400}">${esc(name)}</text>`;
+    r.p.forEach((p, j) => { const w = p * pw - (j < 3 ? 2 : 0); if (w > 0) h += `<rect x="${x}" y="${y + 7}" width="${w}" height="16" rx="${j === 0 || j === 3 ? 4 : 0}" fill="var(${v[j]})"/>`; x += p * pw; });
+    h += `<rect class="hit" data-id="${r.s.id}" x="0" y="${y}" width="${Wc}" height="${rh}"><title>${esc(r.s.name)} : ${r.s.mix.map((n, j) => n + " " + nm[j]).join(", ")}</title></rect></g>`;
+  });
+  h += `<g class="axis">${[0, 25, 50, 75, 100].map(p => `<text x="${m.l + p / 100 * pw}" y="${Hc - 8}" text-anchor="${p === 0 ? "start" : p === 100 ? "end" : "middle"}">${p} %</text>`).join("")}</g></svg>`;
+  box.innerHTML = h + `<div class="mixlab">${nm.map((n, j) => `<span><span class="dot" style="background:var(${v[j]})"></span>${n}</span>`).join("")}</div>`;
+  box.querySelectorAll(".hit").forEach(c => c.onclick = () => select(c.dataset.id, true));
+}
+
+/* palmares */
+function renderPalm() {
+  document.getElementById("palm").innerHTML = Object.entries(PROFILS).map(([k, p]) => `<div class="pcol"><h3>${p.label}</h3><ol>
+    ${p.names.map((n, i) => `<li data-id="${p.ids[i]}" tabindex="0"><span class="num">${i + 1}</span><span>${esc(n)}</span></li>`).join("")}</ol></div>`).join("");
+  document.querySelectorAll(".pcol li").forEach(li => { li.onclick = () => select(li.dataset.id, true); li.onkeydown = e => { if (e.key === "Enter") select(li.dataset.id, true); }; });
+}
+
+function render() {
+  document.querySelectorAll("#fProfil .chip").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === state.profil));
+  document.querySelectorAll("#fZone .chip").forEach(b => b.setAttribute("aria-pressed", state.zones.has(b.dataset.k)));
+  document.getElementById("fPrixV").textContent = state.prix >= 90 ? "tous" : state.prix + " €";
+  document.querySelectorAll(".dot[data-g]").forEach(d => d.style.background = gcol(d.dataset.g));
+  svg.querySelectorAll(".mk").forEach(c => {
+    const s = BY[c.dataset.id]; c.classList.toggle("dim", !visible(s)); c.classList.toggle("sel", s.id === state.sel); c.setAttribute("fill", gcol(s.g));
+  });
+  const filtered = state.profil !== "all" || state.prix < 90;
+  svg.querySelectorAll(".mlab").forEach(t => { const s = BY[t.dataset.id]; t.style.display = visible(s) && (s.id === state.sel || (filtered ? true : s.km >= 245)) ? "" : "none"; });
+  const sc = svg.querySelector(`.mk[data-id="${state.sel}"]`); if (sc) sc.parentNode.insertBefore(sc, svg.querySelector(".mlab"));
+  applyVB();
+  renderCard(); renderList(); renderScatter(); renderPerKm(); renderMix();
+}
+
+if (GUIDE_URL) document.querySelectorAll("#buy, .top .cta").forEach(a => { a.href = GUIDE_URL; a.target = "_blank"; a.rel = "noopener"; });
+buildMap(); renderPalm();
+requestAnimationFrame(() => { fitHome(); render(); });
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { applyVB(); renderScatter(); renderPerKm(); renderMix(); }, 150); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
+
+<div class="install" id="install" hidden>
+  <img src="icons/icon-192.png" alt="" width="40" height="40">
+  <div class="install-t"><b>Installer l'Atlas</b><span id="installMsg">Ajoutez-le à votre écran d'accueil pour l'ouvrir comme une application, même sans réseau.</span></div>
+  <button type="button" id="installBtn">Installer</button>
+  <button type="button" id="installClose" aria-label="Fermer">×</button>
+</div>
+<script>
+if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+(() => {
+  const box = document.getElementById("install"), btn = document.getElementById("installBtn"), msg = document.getElementById("installMsg");
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  let dismissed = false; try { dismissed = localStorage.getItem("atlas-install-off") === "1"; } catch (e) {}
+  if (standalone || dismissed) return;
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  let deferred = null;
+  addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; box.hidden = false; });
+  if (ios) { msg.innerHTML = "Dans Safari, touchez <b>Partager</b> puis <b>Sur l'écran d'accueil</b>."; btn.hidden = true; box.hidden = false; }
+  btn.onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; box.hidden = true; };
+  document.getElementById("installClose").onclick = () => { box.hidden = true; try { localStorage.setItem("atlas-install-off", "1"); } catch (e) {} };
+})();
+</script>
+</body>
+</html>
